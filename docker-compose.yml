@@ -1,0 +1,69 @@
+version: "3.8"
+
+networks:
+  app_network:
+    external: true
+
+services:
+  app:
+    image: registry.gitlab.com/internship-telkom-system/backend:staging
+    container_name: app-staging
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=db-staging
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - DB_PORT=${DB_PORT}
+      - REDIS_HOST=redis-staging
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+      - TOKEN_HOUR_LIFESPAN=${TOKEN_HOUR_LIFESPAN}
+      - FRONTEND_URL=${FRONTEND_URL}
+      - CORS_ORIGIN=${CORS_ORIGIN}
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
+      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
+      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
+      - COMPANY_LOGO_URL=${COMPANY_LOGO_URL}
+      - SIGNATURE_STAMP_URL=${SIGNATURE_STAMP_URL}
+      - SMTP_SENDER_EMAIL=${SMTP_SENDER_EMAIL}
+      - SMTP_SENDER_PASSWORD=${SMTP_SENDER_PASSWORD}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+    ports:
+      - "9090:8080"
+    depends_on:
+      - db-staging
+      - redis-staging
+    networks:
+      - app_network
+
+  db-staging:
+    image: postgres:13-alpine
+    container_name: db-staging
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - app_network
+
+  redis-staging:
+    image: redis:7-alpine
+    container_name: redis-staging
+    restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - redis_data:/data
+    networks:
+      - app_network
+
+volumes:
+  db_data:
+  redis_data:

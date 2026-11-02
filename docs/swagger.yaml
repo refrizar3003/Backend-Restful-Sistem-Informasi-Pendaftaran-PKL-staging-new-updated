@@ -1,0 +1,1339 @@
+basePath: /api/v1
+definitions:
+  dto.ForgotPasswordRequest:
+    properties:
+      email:
+        type: string
+    required:
+    - email
+    type: object
+  dto.GenerateLetterRequest:
+    properties:
+      letter_date:
+        type: string
+      letter_number:
+        type: string
+      recipient_name:
+        type: string
+      reference_number:
+        type: string
+      signer_name:
+        type: string
+      signer_nik:
+        type: string
+      signer_title:
+        type: string
+    required:
+    - letter_date
+    - letter_number
+    - recipient_name
+    - signer_name
+    - signer_nik
+    - signer_title
+    type: object
+  dto.LoginRequest:
+    properties:
+      DeviceToken:
+        type: string
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  dto.RegisterRequest:
+    properties:
+      address:
+        type: string
+      confirm_password:
+        minLength: 8
+        type: string
+      date_of_birth:
+        type: string
+      email:
+        type: string
+      fullname:
+        type: string
+      gender:
+        enum:
+        - male
+        - female
+        type: string
+      password:
+        minLength: 8
+        type: string
+      phone_number:
+        type: string
+      province:
+        type: string
+    required:
+    - address
+    - confirm_password
+    - date_of_birth
+    - email
+    - fullname
+    - gender
+    - password
+    - phone_number
+    - province
+    type: object
+  dto.ResendLoginOTPRequest:
+    properties:
+      challenge_token:
+        type: string
+    required:
+    - challenge_token
+    type: object
+  dto.ResendOTPRequest:
+    properties:
+      email:
+        type: string
+    required:
+    - email
+    type: object
+  dto.ResendVerificationRequest:
+    properties:
+      email:
+        type: string
+    required:
+    - email
+    type: object
+  dto.ResetPasswordRequest:
+    properties:
+      confirm_password:
+        minLength: 8
+        type: string
+      password:
+        minLength: 8
+        type: string
+      reset_token:
+        type: string
+    required:
+    - confirm_password
+    - password
+    - reset_token
+    type: object
+  dto.UpdateApplicationStatusRequest:
+    properties:
+      admin_notes:
+        type: string
+      attendance_date:
+        type: string
+      mentor_id:
+        type: integer
+      status:
+        type: string
+      unit_id:
+        type: integer
+    type: object
+  dto.UserProfileResponse:
+    properties:
+      address:
+        type: string
+      date_of_birth:
+        type: string
+      email:
+        type: string
+      fullname:
+        type: string
+      gender:
+        type: string
+      id:
+        type: integer
+      phone_number:
+        type: string
+      profile_photo:
+        type: string
+      province:
+        type: string
+      role:
+        type: string
+    type: object
+  dto.VerifyCodeRequest:
+    properties:
+      email:
+        type: string
+      otp:
+        type: string
+    required:
+    - email
+    - otp
+    type: object
+  dto.VerifyLoginOTPRequest:
+    properties:
+      challenge_token:
+        type: string
+      otp:
+        type: string
+      remember_device:
+        type: boolean
+    required:
+    - challenge_token
+    - otp
+    type: object
+host: 104.43.88.99
+info:
+  contact:
+    name: Refrizar Dwiardito
+  description: Dokumentasi API untuk pengelolaan pendaftaran Praktik Kerja Lapangan
+    (PKL).
+  title: API Sistem Informasi Pendaftaran PKL - Telkom Witel Lampung
+  version: "1.0"
+paths:
+  /admin/applications:
+    get:
+      description: Retrieves a list of incoming PKL registrations. Supports status
+        filters (to differentiate between "New Registration" and "Registration History"
+        tabs), categories (Student/Student), name search, and pagination.
+      parameters:
+      - description: 'Filter status: diproses|diterima|ditolak|aktif|selesai'
+        in: query
+        name: status
+        type: string
+      - description: 'Category filter: Mahasiswa|Siswa'
+        in: query
+        name: category
+        type: string
+      - description: Search by registrant's full name
+        in: query
+        name: search
+        type: string
+      - description: Page (default 1)
+        in: query
+        name: page
+        type: integer
+      - description: Number of items per page (default 10, maximum 100))
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: PKL registration list
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden - not admin
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: View PKL Registration Data (Admin)
+      tags:
+      - Admin - Application
+  /admin/applications/{id}:
+    get:
+      description: Retrieve complete details of one PKL registration based on ID,
+        including the applicant's personal data, academic information, document files,
+        and unit/mentor data if assigned
+      parameters:
+      - description: ID Pendaftaran PKL
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Registration details
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Registration not found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: View PKL Registration Details (Admin)
+      tags:
+      - Admin - Application
+  /admin/applications/{id}/letter:
+    post:
+      consumes:
+      - application/json
+      description: Generating a PKL acceptance letter in PDF format based on approved
+        registration data. The letter is uploaded to Cloudinary and its URL is saved
+        to the database
+      parameters:
+      - description: PKL Registration ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Letter data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.GenerateLetterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Letter successfully created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Validation failed / wrong date format
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Registration not found
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: The letter has been created / status is not approved
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Generate PKL Acceptance Letter
+      tags:
+      - Admin - Letter
+  /admin/applications/{id}/status:
+    patch:
+      consumes:
+      - application/json
+      description: The "approved" status requires unit_id, mentor_id, and attendance_date.
+        The "rejected" status requires admin_notes
+      parameters:
+      - description: Registration ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Data update status
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateApplicationStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Status updated successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Validation failed
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Registration not found
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Registration is not pending status
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Verify and Change PKL Registration Status (Admin)
+      tags:
+      - Admin - Application
+  /admin/dashboard/summary:
+    get:
+      description: Displays the number of applicants currently being processed by
+        level (SMK/D3/D4/S1), registration trends by year, and a list of recent registrations
+      parameters:
+      - description: 'Number of past years for the trend chart (default: 5)'
+        in: query
+        name: year
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Data dashboard
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Dashboard Summary (Admin)
+      tags:
+      - Admin - Dashboard
+  /admin/employees:
+    get:
+      description: Displays all staff accounts (admin & employee), excluding PKL applicant
+        accounts
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Employee list
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Employee Account List (Admin)
+      tags:
+      - Admin - Employee
+    post:
+      consumes:
+      - multipart/form-data
+      description: Administrator creates new staff account (admin/employee)
+      parameters:
+      - description: Full name
+        in: formData
+        name: fullname
+        required: true
+        type: string
+      - description: Email
+        in: formData
+        name: email
+        required: true
+        type: string
+      - description: Phone number
+        in: formData
+        name: phone_number
+        required: true
+        type: string
+      - description: Access Rights (admin/employee)
+        in: formData
+        name: role
+        required: true
+        type: string
+      - description: Password
+        in: formData
+        name: password
+        required: true
+        type: string
+      - description: Confirm Password
+        in: formData
+        name: confirm_password
+        required: true
+        type: string
+      - description: Profile picture
+        in: formData
+        name: profile_photo
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Employee account created successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Email already in use
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Add Employee Account (Admin)
+      tags:
+      - Admin - Employee
+  /admin/employees/{id}:
+    delete:
+      description: Administrators cannot delete their own accounts that are being
+        used to log in
+      parameters:
+      - description: Employee ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Employee account successfully deleted
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid ID / can't delete own account
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Employee not found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Delete Employee Account (Admin)
+      tags:
+      - Admin - Employee
+    get:
+      parameters:
+      - description: Employee ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Employee details
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid ID
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Employee not found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Employee Account Details (Admin)
+      tags:
+      - Admin - Employee
+    put:
+      consumes:
+      - multipart/form-data
+      description: Password & password confirmation are optional, leave them blank
+        if you don't want to change the password
+      parameters:
+      - description: Employee ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Full name
+        in: formData
+        name: fullname
+        required: true
+        type: string
+      - description: Email
+        in: formData
+        name: email
+        required: true
+        type: string
+      - description: Phone number
+        in: formData
+        name: phone_number
+        required: true
+        type: string
+      - description: Access Rights (admin/employee)
+        in: formData
+        name: role
+        required: true
+        type: string
+      - description: New Password (optional)
+        in: formData
+        name: password
+        type: string
+      - description: Confirm New Password (optional)
+        in: formData
+        name: confirm_password
+        type: string
+      - description: Profile picture
+        in: formData
+        name: profile_photo
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Employee account successfully updated
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Employee not found
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Email already in use
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Edit Employee Account (Admin)
+      tags:
+      - Admin - Employee
+  /admin/units:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Unit/Division List (for Accept modal dropdown)
+      tags:
+      - Admin - Application
+  /admin/units/{unit_id}/mentors:
+    get:
+      parameters:
+      - description: ID Unit
+        in: path
+        name: unit_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: List of Mentors by Unit (for Accept modal dropdown)
+      tags:
+      - Admin - Application
+  /api/v1/verify:
+    get:
+      consumes:
+      - application/json
+      description: Change the 'is_verified' status to true using the JWT token sent
+        via registration email
+      parameters:
+      - description: JWT Verification Token
+        in: query
+        name: token
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Account successfully verified
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Token is invalid, expired, or not found
+          schema:
+            additionalProperties: true
+            type: object
+      summary: User Account Verification
+      tags:
+      - Authentication
+  /applications:
+    get:
+      description: Retrieve all PKL registration history belonging to the currently
+        logged in user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of applications
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: View the PKL Application List
+      tags:
+      - Application
+    post:
+      consumes:
+      - multipart/form-data
+      description: Prospective participants submit academic data for internship registration
+      parameters:
+      - description: Education Level (SMK/D3/D4/S1))
+        in: formData
+        name: education_level
+        required: true
+        type: string
+      - description: Identity Number (NIM/NISN)
+        in: formData
+        name: identity_number
+        required: true
+        type: string
+      - description: Institution Name
+        in: formData
+        name: institution_name
+        required: true
+        type: string
+      - description: Major or Study Program
+        in: formData
+        name: major
+        required: true
+        type: string
+      - description: Semester or Class (number only)
+        in: formData
+        name: semester
+        required: true
+        type: integer
+      - description: Start Date (YYYY-MM-DD)
+        in: formData
+        name: start_date
+        required: true
+        type: string
+      - description: End Date (YYYY-MM-DD)
+        in: formData
+        name: end_date
+        required: true
+        type: string
+      - description: Integrity Pact Agreement
+        in: formData
+        name: integrity_pact_agreed
+        required: true
+        type: boolean
+      - description: Recommendation Letter
+        in: formData
+        name: recommendation_letter
+        type: file
+      - description: Academic Transcript
+        in: formData
+        name: transcript
+        type: file
+      - description: Curriculum Vitae
+        in: formData
+        name: cv
+        type: file
+      - description: Internship Proposal
+        in: formData
+        name: proposal
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Registration submitted successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Active application already exists
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Submit PKL Registration Form
+      tags:
+      - Application
+  /applications/{id}:
+    get:
+      description: Retrieve detailed data from a PKL registration form based on submission
+        ID
+      parameters:
+      - description: PKL Registration ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Application detail
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid ID format
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Application not found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: View PKL Application Details
+      tags:
+      - Application
+  /forgot-password:
+    post:
+      consumes:
+      - application/json
+      description: Sends OTP code to user's email if the email is registered
+      parameters:
+      - description: Email to Reset Password
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ForgotPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: If your email is registered, you will receive an OTP
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request body
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Forgot Password
+      tags:
+      - Auth
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: Perform email and password authentication to get JWT Token
+      parameters:
+      - description: Login Credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Login successful (data.token)
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Invalid email or password
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Account not verified
+          schema:
+            additionalProperties: true
+            type: object
+        "429":
+          description: Too many requests
+          schema:
+            additionalProperties: true
+            type: object
+        "503":
+          description: Cache service unavailable (OTP cannot be issued)
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Login to the System
+      tags:
+      - Auth
+  /login/resend-otp:
+    post:
+      consumes:
+      - application/json
+      description: Sends a new login OTP to the user's email. Requires the challenge_token
+        from POST /login (valid for 10 minutes). Limited to once every 60 seconds.
+        The previous OTP stops working and the attempt counter is reset.
+      parameters:
+      - description: Challenge token
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ResendLoginOTPRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: A new OTP has been sent to your email
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Invalid or expired challenge token
+          schema:
+            additionalProperties: true
+            type: object
+        "429":
+          description: Please wait 2 minute before requesting a new OTP, or too many
+            requests
+          schema:
+            additionalProperties: true
+            type: object
+        "503":
+          description: Cache service unavailable
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Resend Login OTP
+      tags:
+      - Auth
+  /login/verify-otp:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Completes the second step of login. Send the challenge_token from POST /login together with the 6-digit OTP received by email. Returns the JWT token on success.
+        Set "remember_device" to true to also receive a "device_token". Send it as "device_token" in later POST /login requests to skip the OTP on this device until it expires.
+        The OTP is valid for 5 minutes, single use, and allows at most 5 attempts.
+      parameters:
+      - description: Challenge token, OTP code, and optional remember_device flag
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.VerifyLoginOTPRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Login successful (data.token, and data.device_token if remember_device
+            is true)
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Invalid or expired challenge token, or invalid/expired OTP
+          schema:
+            additionalProperties: true
+            type: object
+        "429":
+          description: Too many incorrect OTP attempts, or too many requests
+          schema:
+            additionalProperties: true
+            type: object
+        "503":
+          description: Cache service unavailable
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Verify Login OTP
+      tags:
+      - Auth
+  /notifications:
+    get:
+      description: Retrieve all notifications for the currently logged-in user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Get user notifications
+      tags:
+      - Notification
+  /notifications/{id}/read:
+    patch:
+      parameters:
+      - description: Notification ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Mark notification as read
+      tags:
+      - Notification
+  /notifications/read-all:
+    patch:
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Mark all notifications as read
+      tags:
+      - Notification
+  /profile:
+    get:
+      consumes:
+      - application/json
+      description: Retrieving the profile information details of the currently logged
+        in student based on the JWT token
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully retrieved profile
+          schema:
+            $ref: '#/definitions/dto.UserProfileResponse'
+        "401":
+          description: Unauthorized - Invalid token
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: User not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Retrieve user profile data
+      tags:
+      - Profile
+    put:
+      consumes:
+      - multipart/form-data
+      description: Update user profile information and/or upload a new profile photo
+      parameters:
+      - description: Full Name
+        in: formData
+        name: fullname
+        required: true
+        type: string
+      - description: Gender (Male/Female)
+        in: formData
+        name: gender
+        required: true
+        type: string
+      - description: Date of Birth (YYYY-MM-DD)
+        in: formData
+        name: date_of_birth
+        required: true
+        type: string
+      - description: Email Address
+        in: formData
+        name: email
+        required: true
+        type: string
+      - description: Phone Number
+        in: formData
+        name: phone_number
+        required: true
+        type: string
+      - description: Province
+        in: formData
+        name: province
+        required: true
+        type: string
+      - description: Full Address
+        in: formData
+        name: address
+        required: true
+        type: string
+      - description: Profile Photo File (JPG/PNG)
+        in: formData
+        name: profile_photo
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Profile updated successfully
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request - Invalid data format
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized - Invalid token
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update user profile
+      tags:
+      - Profile
+  /register:
+    post:
+      consumes:
+      - application/json
+      description: Create a new prospective PKL participant account in the database
+        system
+      parameters:
+      - description: User Registration Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: User registered successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request body / password mismatch
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Email already registered
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Registering a New Account
+      tags:
+      - Auth
+  /resend-otp:
+    post:
+      consumes:
+      - application/json
+      description: Resends a new OTP to the user's email. Requires an active OTP session
+        (must have called /forgot-password first). Limited to once every 60 seconds.
+      parameters:
+      - description: Email address
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ResendOTPRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: A new OTP has been sent to your email
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request body or no active OTP session
+          schema:
+            additionalProperties: true
+            type: object
+        "429":
+          description: Please wait 60 seconds before requesting a new OTP
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Resend OTP Reset Password
+      tags:
+      - Auth
+  /resend-verification:
+    post:
+      consumes:
+      - application/json
+      description: Resends an email containing an account verification link. Called
+        by the frontend when a user attempts to log in but receives a 403 (account
+        not verified) response. Limited to once every 120 seconds.
+      parameters:
+      - description: Email address
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ResendVerificationRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Verification email sent
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request body
+          schema:
+            additionalProperties: true
+            type: object
+        "429":
+          description: Cooldown active, wait 2 minutes
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Resend Account Verification Link
+      tags:
+      - Auth
+  /reset-password:
+    post:
+      consumes:
+      - application/json
+      description: Replace the old password with a new password using the Reset Token
+        obtained from OTP verification
+      parameters:
+      - description: New Password Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ResetPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Password has been reset successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized / Invalid Token
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Reset New Password
+      tags:
+      - Auth
+  /verify-code:
+    post:
+      consumes:
+      - application/json
+      description: Validates the OTP code sent to your email. If correct, it will
+        return a Reset Token
+      parameters:
+      - description: Email and OTP Code
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.VerifyCodeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OTP verified successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized / Invalid OTP
+          schema:
+            additionalProperties: true
+            type: object
+      summary: OTP Code Verification
+      tags:
+      - Auth
+securityDefinitions:
+  ApiKeyAuth:
+    description: 'Use format: Bearer <your_token_jwt>'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
